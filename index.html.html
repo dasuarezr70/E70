@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bitácora — Plan Ultimate</title>
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.4/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#F6F4EF; --surface:#FFFFFF; --ink:#16211D; --muted:#75796F; --line:#E4E0D6;
+    --accent:#E8622C; --gym:#2E5EAA; --cardio:#3E7A4C; --field:#C08A1E; --rest:#8A8F87; --tournament:#B23A3A;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{background:var(--bg);color:var(--ink);font-family:'Inter',sans-serif;-webkit-font-smoothing:antialiased;min-height:100vh;}
+  .wrap{max-width:640px;margin:0 auto;padding:18px 16px 60px;}
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  .brand{display:flex;flex-direction:column;}
+  .brand .kicker{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.12em;color:var(--muted);text-transform:uppercase;}
+  .brand h1{font-family:'Space Grotesk',sans-serif;font-size:20px;margin:2px 0 0;font-weight:700;}
+  .phase-pill{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface);border:1px solid var(--line);padding:6px 10px;border-radius:20px;color:var(--muted);white-space:nowrap;}
+
+  .tabs{display:flex;gap:6px;margin-bottom:14px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px;}
+  .tab{flex:1;text-align:center;padding:8px 0;border-radius:9px;font-family:'JetBrains Mono',monospace;font-size:12px;cursor:pointer;color:var(--muted);}
+  .tab.active{background:var(--ink);color:var(--bg);}
+
+  .daynav{display:flex;align-items:center;gap:8px;margin-bottom:14px;}
+  .navbtn{background:var(--surface);border:1px solid var(--line);border-radius:10px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;color:var(--ink);flex-shrink:0;transition:transform .1s ease;}
+  .navbtn:active{transform:scale(0.92);}
+  .datebox{flex:1;text-align:center;font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--muted);}
+  .datebox b{color:var(--ink);font-size:13px;}
+  .todaybtn{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;padding:8px 10px;cursor:pointer;flex-shrink:0;}
+
+  .hero{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:20px;display:flex;align-items:center;gap:18px;margin-bottom:16px;position:relative;overflow:hidden;}
+  .hero-bar{position:absolute;left:0;top:0;bottom:0;width:5px;}
+  .hero-text{flex:1;min-width:0;}
+  .hero-type{font-family:'JetBrains Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;display:inline-block;padding:3px 8px;border-radius:20px;color:#fff;margin-bottom:8px;}
+  .hero-title{font-family:'Space Grotesk',sans-serif;font-size:17px;font-weight:600;line-height:1.3;margin:0 0 4px;}
+  .hero-phase{font-size:12px;color:var(--muted);}
+  .ring-wrap{position:relative;width:74px;height:74px;flex-shrink:0;}
+  .ring-wrap svg{transform:rotate(-90deg);}
+  .ring-label{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:700;}
+
+  .weekstrip{display:flex;gap:6px;overflow-x:auto;padding-bottom:6px;margin-bottom:18px;}
+  .daychip{flex-shrink:0;width:46px;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:6px 4px;text-align:center;cursor:pointer;}
+  .daychip.active{border-color:var(--ink);box-shadow:0 0 0 1px var(--ink) inset;}
+  .daychip .dow{font-family:'JetBrains Mono',monospace;font-size:9px;color:var(--muted);text-transform:uppercase;}
+  .daychip .num{font-family:'Space Grotesk',sans-serif;font-size:14px;font-weight:700;margin:2px 0 4px;}
+  .daychip .dot{width:6px;height:6px;border-radius:50%;margin:0 auto;}
+  .daychip .bar{height:3px;border-radius:2px;background:var(--line);margin-top:4px;overflow:hidden;}
+  .daychip .bar i{display:block;height:100%;background:var(--accent);}
+
+  .section{margin-bottom:16px;}
+  .section-head{font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin:0 0 8px 2px;}
+  .exrow{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px;display:flex;gap:12px;align-items:flex-start;}
+  .exrow.done{opacity:.55;}
+  .chk{width:22px;height:22px;border-radius:7px;border:2px solid var(--line);flex-shrink:0;display:flex;align-items:center;justify-content:center;cursor:pointer;margin-top:1px;background:var(--surface);}
+  .chk.on{background:var(--accent);border-color:var(--accent);color:#fff;font-size:13px;}
+  .exbody{flex:1;min-width:0;}
+  .exhead{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+  .exname{font-weight:600;font-size:14px;margin-bottom:3px;}
+  .exname.done{text-decoration:line-through;}
+  .vidbtn{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--accent);border:1px solid var(--accent);border-radius:20px;padding:3px 8px;text-decoration:none;white-space:nowrap;flex-shrink:0;}
+  .exmeta{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-bottom:4px;}
+  .pill{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--bg);border:1px solid var(--line);padding:2px 7px;border-radius:6px;color:var(--ink);}
+  .pill.load{color:var(--accent);border-color:var(--accent);font-weight:700;}
+  .exnotes{font-size:12px;color:var(--muted);line-height:1.4;}
+  .weightrow{display:flex;align-items:center;gap:8px;margin-top:6px;flex-wrap:wrap;}
+  .weightrow label{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);}
+  .weightrow input{width:60px;font-family:'JetBrains Mono',monospace;font-size:12px;border:1px solid var(--line);border-radius:6px;padding:4px 6px;background:var(--bg);color:var(--ink);}
+  .weightrow input:focus{outline:2px solid var(--accent);outline-offset:1px;}
+  .lbread{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);}
+
+  .note-box{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:12px 14px;font-size:13px;color:var(--ink);line-height:1.5;margin-bottom:10px;}
+  .note-box b{color:var(--accent);}
+
+  .finalbtn{width:100%;background:var(--accent);color:#fff;border:none;border-radius:12px;padding:14px;font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;}
+  .finalbtn:disabled{background:var(--muted);cursor:default;}
+  .finalstatus{text-align:center;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--muted);margin-top:8px;}
+
+  .progwrap{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:16px;margin-bottom:16px;}
+  .progwrap h3{font-family:'Space Grotesk',sans-serif;font-size:14px;margin:0 0 10px;}
+  .progselect{width:100%;font-family:'JetBrains Mono',monospace;font-size:12px;padding:8px;border-radius:8px;border:1px solid var(--line);margin-bottom:10px;background:var(--bg);color:var(--ink);}
+  .confignote{font-size:13px;color:var(--muted);line-height:1.6;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;}
+  .confignote code{background:var(--bg);padding:1px 5px;border-radius:4px;}
+
+  ::-webkit-scrollbar{height:6px;}
+  ::-webkit-scrollbar-thumb{background:var(--line);border-radius:3px;}
+  @media (max-width:400px){.hero{padding:16px;gap:12px;} .ring-wrap{width:60px;height:60px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="topbar">
+    <div class="brand">
+      <span class="kicker">Bitácora de entreno</span>
+      <h1>Diego · Ultimate</h1>
+    </div>
+    <div class="phase-pill" id="phasePill">—</div>
+  </div>
+
+  <div class="tabs">
+    <div class="tab active" id="tabPlan">Plan</div>
+    <div class="tab" id="tabProg">Progreso</div>
+  </div>
+
+  <div id="planView">
+    <div class="daynav">
+      <div class="navbtn" id="prevBtn">‹</div>
+      <div class="datebox" id="dateBox"><b>—</b></div>
+      <div class="navbtn" id="nextBtn">›</div>
+      <button class="todaybtn" id="todayBtn">HOY</button>
+    </div>
+
+    <div class="hero" id="hero">
+      <div class="hero-bar" id="heroBar"></div>
+      <div class="hero-text">
+        <span class="hero-type" id="heroType">—</span>
+        <div class="hero-title" id="heroTitle">—</div>
+        <div class="hero-phase" id="heroPhase">—</div>
+      </div>
+      <div class="ring-wrap">
+        <svg width="74" height="74" viewBox="0 0 74 74">
+          <circle cx="37" cy="37" r="31" fill="none" stroke="var(--line)" stroke-width="7"/>
+          <circle id="ringProgress" cx="37" cy="37" r="31" fill="none" stroke="var(--accent)" stroke-width="7" stroke-linecap="round" stroke-dasharray="194.8" stroke-dashoffset="194.8"/>
+        </svg>
+        <div class="ring-label" id="ringLabel">0/0</div>
+      </div>
+    </div>
+
+    <div class="weekstrip" id="weekStrip"></div>
+    <div id="content"></div>
+  </div>
+
+  <div id="progView" style="display:none;">
+    <div id="progConfigNote"></div>
+    <div id="progCharts" style="display:none;">
+      <div class="progwrap">
+        <h3>Cumplimiento diario (%)</h3>
+        <canvas id="chartCumplimiento" height="180"></canvas>
+      </div>
+      <div class="progwrap">
+        <h3>Progresión de carga por ejercicio</h3>
+        <select class="progselect" id="exerciseSelect"></select>
+        <canvas id="chartCarga" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======= CONFIGURA AQUÍ TU URL DE GOOGLE APPS SCRIPT ======= */
+const SHEET_API_URL = "https://script.google.com/macros/s/AKfycbzNTm-WISDWZlZGcGrv3d_2bRQCgZRPxBtPuHrzXCvc0DKMTtwJ0m9TCqdcIY0sn_ns/exec";
+/* ============================================================ */
+
+const DATA = [{"date":"2026-07-02","title":"Gimnasio Sesión A completa","type":"gym","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Movilidad de tobillo c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Cat-Camel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Fitball roll out","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Press Pallof","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug ipsilateral","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Fire hydrant","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Sentadillas","sr":"3 x 12","notes":"","rm":36,"pct":0.7,"load":25.2,"rest":"3'"},{"section":"Fuerza principal","name":"Press pecho c/mancuernas","sr":"3 x 12","notes":"","rm":22.5,"pct":0.7,"load":15.7,"rest":"3'"},{"section":"Fuerza principal","name":"Zancadas traseras","sr":"3 x 12","notes":"","rm":22.5,"pct":0.7,"load":15.7,"rest":"3'"},{"section":"Fuerza principal","name":"Press Arnold","sr":"3 x 12","notes":"","rm":16,"pct":0.7,"load":11.2,"rest":"3'"},{"section":"Accesorios","name":"Press francés (tríceps)","sr":"3 x 12","notes":"","rm":25,"pct":0.7,"load":17.5,"rest":"3'"},{"section":"Accesorios","name":"Sillón cuádriceps unilateral","sr":"3 x 12","notes":"","rm":34,"pct":0.7,"load":23.8,"rest":"3'"}],"week":"Semana 0"},{"date":"2026-07-03","title":"Gimnasio Sesión B completa + Hombro (corto)","type":"gym","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Glute bridge","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"90-90 de caderas","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/KB","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"AB wheel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Side plank star","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Sentadilla isométrica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Clam shell","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Hip Thrust","sr":"3 x 12","notes":"","rm":81.5,"pct":0.7,"load":57.0,"rest":"3'"},{"section":"Fuerza principal","name":"Dominadas","sr":"3 x 12","notes":"","rm":70,"pct":0.7,"load":49.0,"rest":"3'"},{"section":"Fuerza principal","name":"Sentadillas búlgaras","sr":"3 x 12","notes":"","rm":18,"pct":0.7,"load":12.6,"rest":"3'"},{"section":"Fuerza principal","name":"Remo en polea unilateral","sr":"3 x 12","notes":"","rm":32,"pct":0.7,"load":22.4,"rest":"3'"},{"section":"Accesorios","name":"Prensa","sr":"3 x 12","notes":"","rm":93,"pct":0.7,"load":65.1,"rest":"3'"},{"section":"Accesorios","name":"Curl bíceps martillo","sr":"3 x 12","notes":"","rm":13.5,"pct":0.7,"load":9.4,"rest":"3'"},{"section":"Hombro (circuito)","name":"RE banda derecha","sr":"20 reps","notes":"3-4 vueltas totales, banda ligera-media."},{"section":"Hombro (circuito)","name":"Face Pull","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Pull Apart","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Y Raises","sr":"10 reps","notes":"3-4 vueltas totales, peso muy ligero."}],"week":"Semana 0"},{"date":"2026-07-04","title":"Descanso / movilidad ligera","type":"rest","phase":"Fase 1 · Base","blocks":[{"section":"Nota","name":"Sin zona húmeda esta semana (arranca el lunes desde la Semana 1). Movilidad suave opcional.","sr":"","notes":""}],"week":"Semana 0"},{"date":"2026-07-05","title":"Cancha (equipo)","type":"field","phase":"Fase 1 · Base","blocks":[{"section":"Nota","name":"Entrenamiento en cancha con el equipo — obligatorio.","sr":"","notes":""}],"week":"Semana 0"},{"date":"2026-07-06","title":"Gimnasio Sesión A completa + Zona húmeda","type":"gym","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Movilidad de tobillo c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Cat-Camel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Fitball roll out","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Press Pallof","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug ipsilateral","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Fire hydrant","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Sentadillas","sr":"3 x 12","notes":"","rm":36,"pct":0.7,"load":25.2,"rest":"3'"},{"section":"Fuerza principal","name":"Press pecho c/mancuernas","sr":"3 x 12","notes":"","rm":22.5,"pct":0.7,"load":15.7,"rest":"3'"},{"section":"Fuerza principal","name":"Zancadas traseras","sr":"3 x 12","notes":"","rm":22.5,"pct":0.7,"load":15.7,"rest":"3'"},{"section":"Fuerza principal","name":"Press Arnold","sr":"3 x 12","notes":"","rm":16,"pct":0.7,"load":11.2,"rest":"3'"},{"section":"Accesorios","name":"Press francés (tríceps)","sr":"3 x 12","notes":"","rm":25,"pct":0.7,"load":17.5,"rest":"3'"},{"section":"Accesorios","name":"Sillón cuádriceps unilateral","sr":"3 x 12","notes":"","rm":34,"pct":0.7,"load":23.8,"rest":"3'"},{"section":"Recuperación","name":"Zona húmeda (sauna/vapor)","sr":"15-20 minutos","notes":"Recuperación activa post-entreno."}],"week":"Semana 1"},{"date":"2026-07-07","title":"Cardio + Pliometría + Frenadas","type":"cardio","phase":"Fase 1 · Base","blocks":[{"section":"Calentamiento","name":"Trote suave + movilidad dinámica","sr":"10 minutos","notes":"Incluye 2-3 progresiones de velocidad al 70-80%."},{"section":"Cardio","name":"Potencia aeróbica base — lineal","sr":"30\"/30\" x 10-12 rondas","notes":"RPE 7/10 (75-80%), sin cambios de dirección."},{"section":"Pliometría","name":"Saltos horizontales submáximos","sr":"3 x 5","notes":"Sin drop jump esta fase."},{"section":"Pliometría","name":"Salto a banco bajo","sr":"3 x 5","notes":"Sin caída con impacto."},{"section":"Pliometría","name":"Skipping bajo","sr":"3 x 15 seg","notes":""},{"section":"Frenadas","name":"Caminata lateral con miniband","sr":"3 x 10 pasos/lado","notes":"Activar glúteo medio."},{"section":"Frenadas","name":"Tibialis raise en pared","sr":"3 x 15","notes":"Favorece control de dorsiflexión y desaceleración."},{"section":"Frenadas","name":"Círculos de cadera en cuadrupedia","sr":"3 x 8 por lado","notes":"Movimiento amplio, lento y controlado."},{"section":"Frenadas","name":"Cossack squat asistido","sr":"3 x 6 por lado","notes":"Desplazamiento lateral, talón apoyado."},{"section":"Frenadas","name":"Copenhagen corto modificado","sr":"3 x 15 seg/lado","notes":"Controlar pelvis, evitar dolor en aductores."},{"section":"Frenadas","name":"Hamstring flossing activo","sr":"3 x 10 por lado","notes":"Sin estiramiento agresivo."},{"section":"Frenadas","name":"Step down controlado","sr":"3 x 8 por lado","notes":"Evitar valgo de rodilla, controlar fase excéntrica."},{"section":"Frenadas","name":"Frenada técnica en 2 pasos","sr":"4 x 5 repeticiones","notes":"Frenar en dos apoyos, rodillas semiflexionadas."},{"section":"Frenadas","name":"Lateral shuffle + hold","sr":"4 x 10 metros","notes":"Pausa de 2 segundos al final, controlar alineación."},{"section":"Enfriamiento","name":"Trote suave + movilidad ligera","sr":"5 minutos","notes":"Bajar frecuencia cardíaca gradualmente."}],"week":"Semana 1"},{"date":"2026-07-08","title":"Gimnasio Sesión B completa + Hombro completo","type":"gym","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Glute bridge","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"90-90 de caderas","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/KB","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"AB wheel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Side plank star","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Sentadilla isométrica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Clam shell","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Hip Thrust","sr":"3 x 12","notes":"","rm":81.5,"pct":0.7,"load":57.0,"rest":"3'"},{"section":"Fuerza principal","name":"Dominadas","sr":"3 x 12","notes":"","rm":70,"pct":0.7,"load":49.0,"rest":"3'"},{"section":"Fuerza principal","name":"Sentadillas búlgaras","sr":"3 x 12","notes":"","rm":18,"pct":0.7,"load":12.6,"rest":"3'"},{"section":"Fuerza principal","name":"Remo en polea unilateral","sr":"3 x 12","notes":"","rm":32,"pct":0.7,"load":22.4,"rest":"3'"},{"section":"Accesorios","name":"Prensa","sr":"3 x 12","notes":"","rm":93,"pct":0.7,"load":65.1,"rest":"3'"},{"section":"Accesorios","name":"Curl bíceps martillo","sr":"3 x 12","notes":"","rm":13.5,"pct":0.7,"load":9.4,"rest":"3'"},{"section":"Hombro","name":"Side-Lying External Rotation derecha","sr":"5 x 10","notes":"Prioridad — déficit de RE derecha (38-40%)."},{"section":"Hombro","name":"Rotación externa cable derecha","sr":"5 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"ER a 90° de abducción","sr":"4 x 10","notes":"Banda de resistencia media."},{"section":"Hombro","name":"Face Pull unilateral derecha","sr":"4 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"Bottom-Up Carry","sr":"3 x 20 m","notes":"Peso ligero, foco en estabilidad de manguito rotador."},{"section":"Hombro","name":"Waiter Carry","sr":"3 x 20 m","notes":"Peso ligero, control postural."},{"section":"Hombro","name":"Push-Up Plus","sr":"3 x 15","notes":"Peso corporal."}],"week":"Semana 1"},{"date":"2026-07-09","title":"Campo: calentamiento Sesión C + Lanzamientos","type":"field","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Lanzamientos técnicos + cambios de dirección suaves, sin máxima intensidad.","sr":"","notes":""}],"week":"Semana 1"},{"date":"2026-07-10","title":"Gimnasio Sesión D completa + Hombro (corto)","type":"gym","phase":"Fase 1 · Base","blocks":[{"section":"Movilidad articular","name":"Puente de glúteo 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/banda invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Revolver la olla","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Bird dog","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Hollow rocks","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Plank Copenhagen","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Monster walk","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Peso muerto sumo","sr":"3 x 12","notes":"","rm":55,"pct":0.7,"load":38.5,"rest":"3'"},{"section":"Fuerza principal","name":"Press militar","sr":"3 x 12","notes":"","rm":16,"pct":0.7,"load":11.2,"rest":"3'"},{"section":"Fuerza principal","name":"Globet squat","sr":"3 x 12","notes":"","rm":55,"pct":0.7,"load":38.5,"rest":"3'"},{"section":"Accesorios","name":"Farmer walk (por mano)","sr":"3 x 12","notes":"","rm":20,"pct":0.7,"load":14.0,"rest":"3'"},{"section":"Accesorios","name":"Remo a la pera","sr":"3 x 12","notes":"","rm":35,"pct":0.7,"load":24.5,"rest":"3'"},{"section":"Accesorios","name":"Vuelos laterales","sr":"3 x 12","notes":"","rm":11.5,"pct":0.7,"load":8.0,"rest":"3'"},{"section":"Hombro (circuito)","name":"RE banda derecha","sr":"20 reps","notes":"3-4 vueltas totales, banda ligera-media."},{"section":"Hombro (circuito)","name":"Face Pull","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Pull Apart","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Y Raises","sr":"10 reps","notes":"3-4 vueltas totales, peso muy ligero."}],"week":"Semana 1"},{"date":"2026-07-11","title":"Descanso / movilidad ligera","type":"rest","phase":"Fase 1 · Base","blocks":[{"section":"Nota","name":"Descanso o movilidad suave, sin zona húmeda.","sr":"","notes":""}],"week":"Semana 1"},{"date":"2026-07-12","title":"Cancha (equipo)","type":"field","phase":"Fase 1 · Base","blocks":[{"section":"Nota","name":"Chequeo clínico de fin de semana 1: confirmar ausencia de dolor en isquiotibial y hombro antes de avanzar a Fase 2.","sr":"","notes":""}],"week":"Semana 1"},{"date":"2026-07-13","title":"Cancha (equipo, reemplaza gimnasio) — FESTIVO","type":"field","phase":"Fase 2 · Intensificación","blocks":[{"section":"Nota","name":"Día festivo: entrenamiento en cancha en vez de gimnasio.","sr":"","notes":""}],"week":"Semana 2"},{"date":"2026-07-14","title":"Cardio + Pliometría + Frenadas","type":"cardio","phase":"Fase 2 · Intensificación","blocks":[{"section":"Calentamiento","name":"Trote suave + movilidad dinámica","sr":"10 minutos","notes":"Incluye 2-3 progresiones de velocidad al 70-80%."},{"section":"Cardio","name":"RSA introductorio + cambio de dirección","sr":"Sprints 10-15m x 6-8","notes":"Descanso 20-25\". +1 cambio de dirección 45°."},{"section":"Pliometría","name":"Drop jump bajo (20-30 cm)","sr":"3 x 5","notes":""},{"section":"Pliometría","name":"Salto lateral controlado","sr":"3 x 6 por lado","notes":""},{"section":"Pliometría","name":"Bounds cortos","sr":"3 x 8 m","notes":""},{"section":"Frenadas","name":"Caminata lateral con miniband","sr":"3 x 10 pasos/lado","notes":"Activar glúteo medio."},{"section":"Frenadas","name":"Tibialis raise en pared","sr":"3 x 15","notes":"Favorece control de dorsiflexión y desaceleración."},{"section":"Frenadas","name":"Círculos de cadera en cuadrupedia","sr":"3 x 8 por lado","notes":"Movimiento amplio, lento y controlado."},{"section":"Frenadas","name":"Cossack squat asistido","sr":"3 x 6 por lado","notes":"Desplazamiento lateral, talón apoyado."},{"section":"Frenadas","name":"Copenhagen corto modificado","sr":"3 x 15 seg/lado","notes":"Controlar pelvis, evitar dolor en aductores."},{"section":"Frenadas","name":"Hamstring flossing activo","sr":"3 x 10 por lado","notes":"Sin estiramiento agresivo."},{"section":"Frenadas","name":"Step down controlado","sr":"3 x 8 por lado","notes":"Evitar valgo de rodilla, controlar fase excéntrica."},{"section":"Frenadas","name":"Frenada técnica en 2 pasos","sr":"4 x 5 repeticiones","notes":"Frenar en dos apoyos, rodillas semiflexionadas."},{"section":"Frenadas","name":"Lateral shuffle + hold","sr":"4 x 10 metros","notes":"Pausa de 2 segundos al final, controlar alineación."},{"section":"Enfriamiento","name":"Trote suave + movilidad ligera","sr":"5 minutos","notes":"Bajar frecuencia cardíaca gradualmente."}],"week":"Semana 2"},{"date":"2026-07-15","title":"Gimnasio Sesión A completa + Hombro completo + Zona húmeda","type":"gym","phase":"Fase 2 · Intensificación","blocks":[{"section":"Movilidad articular","name":"Movilidad de tobillo c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Cat-Camel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Fitball roll out","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Press Pallof","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug ipsilateral","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Fire hydrant","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Sentadillas","sr":"4 x 8","notes":"","rm":36,"pct":0.78,"load":28.1,"rest":"3'"},{"section":"Fuerza principal","name":"Press pecho c/mancuernas","sr":"4 x 8","notes":"","rm":22.5,"pct":0.78,"load":17.6,"rest":"3'"},{"section":"Fuerza principal","name":"Zancadas traseras","sr":"4 x 8","notes":"","rm":22.5,"pct":0.78,"load":17.6,"rest":"3'"},{"section":"Fuerza principal","name":"Press Arnold","sr":"4 x 8","notes":"","rm":16,"pct":0.78,"load":12.5,"rest":"3'"},{"section":"Accesorios","name":"Press francés (tríceps)","sr":"4 x 8","notes":"","rm":25,"pct":0.78,"load":19.5,"rest":"3'"},{"section":"Accesorios","name":"Sillón cuádriceps unilateral","sr":"4 x 8","notes":"","rm":34,"pct":0.78,"load":26.5,"rest":"3'"},{"section":"Hombro","name":"Side-Lying External Rotation derecha","sr":"5 x 10","notes":"Prioridad — déficit de RE derecha (38-40%)."},{"section":"Hombro","name":"Rotación externa cable derecha","sr":"5 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"ER a 90° de abducción","sr":"4 x 10","notes":"Banda de resistencia media."},{"section":"Hombro","name":"Face Pull unilateral derecha","sr":"4 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"Bottom-Up Carry","sr":"3 x 20 m","notes":"Peso ligero, foco en estabilidad de manguito rotador."},{"section":"Hombro","name":"Waiter Carry","sr":"3 x 20 m","notes":"Peso ligero, control postural."},{"section":"Hombro","name":"Push-Up Plus","sr":"3 x 15","notes":"Peso corporal."},{"section":"Recuperación","name":"Zona húmeda (sauna/vapor)","sr":"15-20 minutos","notes":"Recuperación activa post-entreno."}],"week":"Semana 2"},{"date":"2026-07-16","title":"Campo: calentamiento Sesión C + Lanzamientos (mayor volumen)","type":"field","phase":"Fase 2 · Intensificación","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Mayor volumen de lanzamiento y cambios de dirección con más intensidad.","sr":"","notes":""}],"week":"Semana 2"},{"date":"2026-07-17","title":"Gimnasio Sesión D completa + Hombro (corto)","type":"gym","phase":"Fase 2 · Intensificación","blocks":[{"section":"Movilidad articular","name":"Puente de glúteo 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/banda invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Revolver la olla","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Bird dog","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Hollow rocks","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Plank Copenhagen","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Monster walk","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Peso muerto sumo","sr":"4 x 8","notes":"","rm":55,"pct":0.78,"load":42.9,"rest":"3'"},{"section":"Fuerza principal","name":"Press militar","sr":"4 x 8","notes":"","rm":16,"pct":0.78,"load":12.5,"rest":"3'"},{"section":"Fuerza principal","name":"Globet squat","sr":"4 x 8","notes":"","rm":55,"pct":0.78,"load":42.9,"rest":"3'"},{"section":"Accesorios","name":"Farmer walk (por mano)","sr":"4 x 8","notes":"","rm":20,"pct":0.78,"load":15.6,"rest":"3'"},{"section":"Accesorios","name":"Remo a la pera","sr":"4 x 8","notes":"","rm":35,"pct":0.78,"load":27.3,"rest":"3'"},{"section":"Accesorios","name":"Vuelos laterales","sr":"4 x 8","notes":"","rm":11.5,"pct":0.78,"load":9.0,"rest":"3'"},{"section":"Hombro (circuito)","name":"RE banda derecha","sr":"20 reps","notes":"3-4 vueltas totales, banda ligera-media."},{"section":"Hombro (circuito)","name":"Face Pull","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Pull Apart","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Y Raises","sr":"10 reps","notes":"3-4 vueltas totales, peso muy ligero."}],"week":"Semana 2"},{"date":"2026-07-18","title":"Descanso / movilidad ligera","type":"rest","phase":"Fase 2 · Intensificación","blocks":[{"section":"Nota","name":"Descanso o movilidad suave, sin zona húmeda (ya realizada el miércoles).","sr":"","notes":""}],"week":"Semana 2"},{"date":"2026-07-19","title":"Cancha (equipo)","type":"field","phase":"Fase 2 · Intensificación","blocks":[{"section":"Nota","name":"Entrenamiento en cancha con el equipo — obligatorio.","sr":"","notes":""}],"week":"Semana 2"},{"date":"2026-07-20","title":"Cancha (equipo, reemplaza gimnasio) — FESTIVO","type":"field","phase":"Fase 3 · Mini-taper","blocks":[{"section":"Nota","name":"Día festivo: entrenamiento en cancha en vez de gimnasio.","sr":"","notes":""}],"week":"Semana 3"},{"date":"2026-07-21","title":"Cardio + Pliometría + Frenadas (mantenimiento)","type":"cardio","phase":"Fase 3 · Mini-taper","blocks":[{"section":"Calentamiento","name":"Trote suave + movilidad dinámica","sr":"10 minutos","notes":"Incluye 2-3 progresiones de velocidad al 70-80%."},{"section":"Cardio","name":"RSA específico reducido","sr":"Volumen -30%","notes":"2 sesiones cortas en la semana en vez de 1 larga."},{"section":"Pliometría","name":"Drop jump bajo (20-30 cm)","sr":"2 x 5","notes":"Mini-taper: -1 serie vs fase 2."},{"section":"Pliometría","name":"Salto lateral controlado","sr":"2 x 6 por lado","notes":"Mini-taper."},{"section":"Pliometría","name":"Bounds cortos","sr":"2 x 8 m","notes":"Mini-taper."},{"section":"Frenadas","name":"Caminata lateral con miniband","sr":"3 x 10 pasos/lado","notes":"Activar glúteo medio."},{"section":"Frenadas","name":"Tibialis raise en pared","sr":"3 x 15","notes":"Favorece control de dorsiflexión y desaceleración."},{"section":"Frenadas","name":"Círculos de cadera en cuadrupedia","sr":"3 x 8 por lado","notes":"Movimiento amplio, lento y controlado."},{"section":"Frenadas","name":"Cossack squat asistido","sr":"3 x 6 por lado","notes":"Desplazamiento lateral, talón apoyado."},{"section":"Frenadas","name":"Copenhagen corto modificado","sr":"3 x 15 seg/lado","notes":"Controlar pelvis, evitar dolor en aductores."},{"section":"Frenadas","name":"Hamstring flossing activo","sr":"3 x 10 por lado","notes":"Sin estiramiento agresivo."},{"section":"Frenadas","name":"Step down controlado","sr":"3 x 8 por lado","notes":"Evitar valgo de rodilla, controlar fase excéntrica."},{"section":"Frenadas","name":"Frenada técnica en 2 pasos","sr":"4 x 5 repeticiones","notes":"Frenar en dos apoyos, rodillas semiflexionadas."},{"section":"Frenadas","name":"Lateral shuffle + hold","sr":"4 x 10 metros","notes":"Pausa de 2 segundos al final, controlar alineación."},{"section":"Enfriamiento","name":"Trote suave + movilidad ligera","sr":"5 minutos","notes":"Bajar frecuencia cardíaca gradualmente."}],"week":"Semana 3"},{"date":"2026-07-22","title":"Gimnasio Sesión B (reducida) + Hombro completo + Zona húmeda","type":"gym","phase":"Fase 3 · Mini-taper","blocks":[{"section":"Movilidad articular","name":"Glute bridge","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"90-90 de caderas","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/KB","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"AB wheel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Side plank star","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Sentadilla isométrica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Clam shell","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Hip Thrust","sr":"2 x 8","notes":"","rm":81.5,"pct":0.62,"load":50.5,"rest":"2'"},{"section":"Fuerza principal","name":"Dominadas","sr":"2 x 8","notes":"","rm":70,"pct":0.62,"load":43.4,"rest":"2'"},{"section":"Fuerza principal","name":"Sentadillas búlgaras","sr":"2 x 8","notes":"","rm":18,"pct":0.62,"load":11.2,"rest":"2'"},{"section":"Fuerza principal","name":"Remo en polea unilateral","sr":"2 x 8","notes":"","rm":32,"pct":0.62,"load":19.8,"rest":"2'"},{"section":"Accesorios","name":"Prensa","sr":"2 x 8","notes":"","rm":93,"pct":0.62,"load":57.7,"rest":"2'"},{"section":"Accesorios","name":"Curl bíceps martillo","sr":"2 x 8","notes":"","rm":13.5,"pct":0.62,"load":8.4,"rest":"2'"},{"section":"Hombro","name":"Side-Lying External Rotation derecha","sr":"5 x 10","notes":"Prioridad — déficit de RE derecha (38-40%)."},{"section":"Hombro","name":"Rotación externa cable derecha","sr":"5 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"ER a 90° de abducción","sr":"4 x 10","notes":"Banda de resistencia media."},{"section":"Hombro","name":"Face Pull unilateral derecha","sr":"4 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"Bottom-Up Carry","sr":"3 x 20 m","notes":"Peso ligero, foco en estabilidad de manguito rotador."},{"section":"Hombro","name":"Waiter Carry","sr":"3 x 20 m","notes":"Peso ligero, control postural."},{"section":"Hombro","name":"Push-Up Plus","sr":"3 x 15","notes":"Peso corporal."},{"section":"Recuperación","name":"Zona húmeda (sauna/vapor)","sr":"15-20 minutos","notes":"Recuperación activa post-entreno."}],"week":"Semana 3"},{"date":"2026-07-23","title":"Campo: calentamiento Sesión C + Lanzamientos suaves","type":"field","phase":"Fase 3 · Mini-taper","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Solo activación, sin volumen alto — priorizar frescura para el torneo.","sr":"","notes":""}],"week":"Semana 3"},{"date":"2026-07-24","title":"Activación + Movilidad (sin carga nueva)","type":"rest","phase":"Fase 3 · Mini-taper","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Nota","name":"Solo activación, sin trabajo de fuerza nuevo. Priorizar frescura.","sr":"","notes":""}],"week":"Semana 3"},{"date":"2026-07-25","title":"TORNEO PREPARATIVO (Día 1)","type":"tournament","phase":"Torneo preparativo","blocks":[{"section":"Nota","name":"Se trata como carga de competencia real. Sin gimnasio ni cardio adicional.","sr":"","notes":""}],"week":"Semana 3"},{"date":"2026-07-26","title":"TORNEO PREPARATIVO (Día 2)","type":"tournament","phase":"Torneo preparativo","blocks":[{"section":"Nota","name":"Se trata como carga de competencia real. Sin gimnasio ni cardio adicional.","sr":"","notes":""}],"week":"Semana 3"},{"date":"2026-07-27","title":"Recuperación activa completa (sin gimnasio) + Zona húmeda","type":"rest","phase":"Fase 4 · Recuperación","blocks":[{"section":"Recuperación","name":"Zona húmeda (sauna/vapor)","sr":"15-20 minutos","notes":"Recuperación activa post-entreno."},{"section":"Nota","name":"Evaluar fatiga acumulada del torneo antes de retomar carga plena.","sr":"","notes":""}],"week":"Semana 4"},{"date":"2026-07-28","title":"Cardio (reintroducción) + Pliometría + Frenadas ligero","type":"cardio","phase":"Fase 4 · Recuperación","blocks":[{"section":"Calentamiento","name":"Trote suave + movilidad dinámica","sr":"10 minutos","notes":"Incluye 2-3 progresiones de velocidad al 70-80%."},{"section":"Cardio","name":"Recuperación / reintroducción aeróbica","sr":"40\"/40\" x 8-10 rondas","notes":"RPE ~7/10 (70%), sin sprints máximos."},{"section":"Pliometría","name":"Saltos horizontales submáximos","sr":"2 x 5","notes":"Reintroducción post-torneo, sin drop jump."},{"section":"Frenadas","name":"Caminata lateral con miniband","sr":"3 x 10 pasos/lado","notes":"Activar glúteo medio."},{"section":"Frenadas","name":"Tibialis raise en pared","sr":"3 x 15","notes":"Favorece control de dorsiflexión y desaceleración."},{"section":"Frenadas","name":"Círculos de cadera en cuadrupedia","sr":"3 x 8 por lado","notes":"Movimiento amplio, lento y controlado."},{"section":"Frenadas","name":"Cossack squat asistido","sr":"3 x 6 por lado","notes":"Desplazamiento lateral, talón apoyado."},{"section":"Frenadas","name":"Copenhagen corto modificado","sr":"3 x 15 seg/lado","notes":"Controlar pelvis, evitar dolor en aductores."},{"section":"Frenadas","name":"Hamstring flossing activo","sr":"3 x 10 por lado","notes":"Sin estiramiento agresivo."},{"section":"Frenadas","name":"Step down controlado","sr":"3 x 8 por lado","notes":"Evitar valgo de rodilla, controlar fase excéntrica."},{"section":"Frenadas","name":"Frenada técnica en 2 pasos","sr":"4 x 5 repeticiones","notes":"Frenar en dos apoyos, rodillas semiflexionadas."},{"section":"Frenadas","name":"Lateral shuffle + hold","sr":"4 x 10 metros","notes":"Pausa de 2 segundos al final, controlar alineación."},{"section":"Enfriamiento","name":"Trote suave + movilidad ligera","sr":"5 minutos","notes":"Bajar frecuencia cardíaca gradualmente."}],"week":"Semana 4"},{"date":"2026-07-29","title":"Gimnasio Sesión A completa + Hombro completo","type":"gym","phase":"Fase 4 · Recuperación","blocks":[{"section":"Movilidad articular","name":"Movilidad de tobillo c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera c/banda","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Cat-Camel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Fitball roll out","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Press Pallof","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug ipsilateral","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Fire hydrant","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Sentadillas","sr":"3 x 10","notes":"","rm":36,"pct":0.68,"load":24.5,"rest":"3'"},{"section":"Fuerza principal","name":"Press pecho c/mancuernas","sr":"3 x 10","notes":"","rm":22.5,"pct":0.68,"load":15.3,"rest":"3'"},{"section":"Fuerza principal","name":"Zancadas traseras","sr":"3 x 10","notes":"","rm":22.5,"pct":0.68,"load":15.3,"rest":"3'"},{"section":"Fuerza principal","name":"Press Arnold","sr":"3 x 10","notes":"","rm":16,"pct":0.68,"load":10.9,"rest":"3'"},{"section":"Accesorios","name":"Press francés (tríceps)","sr":"3 x 10","notes":"","rm":25,"pct":0.68,"load":17.0,"rest":"3'"},{"section":"Accesorios","name":"Sillón cuádriceps unilateral","sr":"3 x 10","notes":"","rm":34,"pct":0.68,"load":23.1,"rest":"3'"},{"section":"Hombro","name":"Side-Lying External Rotation derecha","sr":"5 x 10","notes":"Prioridad — déficit de RE derecha (38-40%)."},{"section":"Hombro","name":"Rotación externa cable derecha","sr":"5 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"ER a 90° de abducción","sr":"4 x 10","notes":"Banda de resistencia media."},{"section":"Hombro","name":"Face Pull unilateral derecha","sr":"4 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"Bottom-Up Carry","sr":"3 x 20 m","notes":"Peso ligero, foco en estabilidad de manguito rotador."},{"section":"Hombro","name":"Waiter Carry","sr":"3 x 20 m","notes":"Peso ligero, control postural."},{"section":"Hombro","name":"Push-Up Plus","sr":"3 x 15","notes":"Peso corporal."}],"week":"Semana 4"},{"date":"2026-07-30","title":"Campo: calentamiento Sesión C + Lanzamientos normales","type":"field","phase":"Fase 4 · Recuperación","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Retorno a volumen normal de lanzamiento y cambios de dirección.","sr":"","notes":""}],"week":"Semana 4"},{"date":"2026-07-31","title":"Gimnasio Sesión D completa + Hombro (corto)","type":"gym","phase":"Fase 4 · Recuperación","blocks":[{"section":"Movilidad articular","name":"Puente de glúteo 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/banda invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Revolver la olla","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Bird dog","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Hollow rocks","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Plank Copenhagen","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Monster walk","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Peso muerto sumo","sr":"3 x 10","notes":"","rm":55,"pct":0.68,"load":37.4,"rest":"3'"},{"section":"Fuerza principal","name":"Press militar","sr":"3 x 10","notes":"","rm":16,"pct":0.68,"load":10.9,"rest":"3'"},{"section":"Fuerza principal","name":"Globet squat","sr":"3 x 10","notes":"","rm":55,"pct":0.68,"load":37.4,"rest":"3'"},{"section":"Accesorios","name":"Farmer walk (por mano)","sr":"3 x 10","notes":"","rm":20,"pct":0.68,"load":13.6,"rest":"3'"},{"section":"Accesorios","name":"Remo a la pera","sr":"3 x 10","notes":"","rm":35,"pct":0.68,"load":23.8,"rest":"3'"},{"section":"Accesorios","name":"Vuelos laterales","sr":"3 x 10","notes":"","rm":11.5,"pct":0.68,"load":7.8,"rest":"3'"},{"section":"Hombro (circuito)","name":"RE banda derecha","sr":"20 reps","notes":"3-4 vueltas totales, banda ligera-media."},{"section":"Hombro (circuito)","name":"Face Pull","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Pull Apart","sr":"15 reps","notes":"3-4 vueltas totales."},{"section":"Hombro (circuito)","name":"Y Raises","sr":"10 reps","notes":"3-4 vueltas totales, peso muy ligero."}],"week":"Semana 4"},{"date":"2026-08-01","title":"Descanso / movilidad ligera","type":"rest","phase":"Fase 4 · Recuperación","blocks":[{"section":"Nota","name":"Descanso o movilidad suave, sin zona húmeda (ya realizada el lunes).","sr":"","notes":""}],"week":"Semana 4"},{"date":"2026-08-02","title":"Cancha (equipo)","type":"field","phase":"Fase 4 · Recuperación","blocks":[{"section":"Nota","name":"Entrenamiento en cancha con el equipo — obligatorio.","sr":"","notes":""}],"week":"Semana 4"},{"date":"2026-08-03","title":"Gimnasio Sesión B (volumen -30%) + Zona húmeda","type":"gym","phase":"Fase 5 · Taper final","blocks":[{"section":"Movilidad articular","name":"Glute bridge","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"90-90 de caderas","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/KB","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Dead bug","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"AB wheel","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Side plank star","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Sentadilla isométrica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Clam shell","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Hip Thrust","sr":"2 x 6","notes":"","rm":81.5,"pct":0.58,"load":47.3,"rest":"2'"},{"section":"Fuerza principal","name":"Dominadas","sr":"2 x 6","notes":"","rm":70,"pct":0.58,"load":40.6,"rest":"2'"},{"section":"Fuerza principal","name":"Sentadillas búlgaras","sr":"2 x 6","notes":"","rm":18,"pct":0.58,"load":10.4,"rest":"2'"},{"section":"Fuerza principal","name":"Remo en polea unilateral","sr":"2 x 6","notes":"","rm":32,"pct":0.58,"load":18.6,"rest":"2'"},{"section":"Accesorios","name":"Prensa","sr":"2 x 6","notes":"","rm":93,"pct":0.58,"load":53.9,"rest":"2'"},{"section":"Accesorios","name":"Curl bíceps martillo","sr":"2 x 6","notes":"","rm":13.5,"pct":0.58,"load":7.8,"rest":"2'"},{"section":"Recuperación","name":"Zona húmeda (sauna/vapor)","sr":"15-20 minutos","notes":"Recuperación activa post-entreno."}],"week":"Semana 5"},{"date":"2026-08-04","title":"Cardio (mantenimiento) + Pliometría (taper)","type":"cardio","phase":"Fase 5 · Taper final","blocks":[{"section":"Calentamiento","name":"Trote suave + movilidad dinámica","sr":"10 minutos","notes":"Incluye 2-3 progresiones de velocidad al 70-80%."},{"section":"Cardio","name":"RSA mantenimiento — bajo volumen","sr":"4-6 sprints cortos máximos","notes":"Descanso completo 1-2'. Prioriza velocidad."},{"section":"Pliometría","name":"Pliometría baja carga, alta velocidad","sr":"2 x 5","notes":"Mantener frescura neuromuscular."},{"section":"Enfriamiento","name":"Trote suave + movilidad ligera","sr":"5 minutos","notes":"Bajar frecuencia cardíaca gradualmente."}],"week":"Semana 5"},{"date":"2026-08-05","title":"Gimnasio Sesión D (reducida) + Hombro completo","type":"gym","phase":"Fase 5 · Taper final","blocks":[{"section":"Movilidad articular","name":"Puente de glúteo 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Empuje de cadera 1 pie","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Mov. de tobillo c/banda invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Revolver la olla","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Bird dog","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Hollow rocks","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Plank Copenhagen","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Monster walk","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Fuerza principal","name":"Peso muerto sumo","sr":"2 x 6","notes":"","rm":55,"pct":0.58,"load":31.9,"rest":"2'"},{"section":"Fuerza principal","name":"Press militar","sr":"2 x 6","notes":"","rm":16,"pct":0.58,"load":9.3,"rest":"2'"},{"section":"Fuerza principal","name":"Globet squat","sr":"2 x 6","notes":"","rm":55,"pct":0.58,"load":31.9,"rest":"2'"},{"section":"Accesorios","name":"Farmer walk (por mano)","sr":"2 x 6","notes":"","rm":20,"pct":0.58,"load":11.6,"rest":"2'"},{"section":"Accesorios","name":"Remo a la pera","sr":"2 x 6","notes":"","rm":35,"pct":0.58,"load":20.3,"rest":"2'"},{"section":"Accesorios","name":"Vuelos laterales","sr":"2 x 6","notes":"","rm":11.5,"pct":0.58,"load":6.7,"rest":"2'"},{"section":"Hombro","name":"Side-Lying External Rotation derecha","sr":"5 x 10","notes":"Prioridad — déficit de RE derecha (38-40%)."},{"section":"Hombro","name":"Rotación externa cable derecha","sr":"5 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"ER a 90° de abducción","sr":"4 x 10","notes":"Banda de resistencia media."},{"section":"Hombro","name":"Face Pull unilateral derecha","sr":"4 x 12","notes":"Banda/cable de resistencia media."},{"section":"Hombro","name":"Bottom-Up Carry","sr":"3 x 20 m","notes":"Peso ligero, foco en estabilidad de manguito rotador."},{"section":"Hombro","name":"Waiter Carry","sr":"3 x 20 m","notes":"Peso ligero, control postural."},{"section":"Hombro","name":"Push-Up Plus","sr":"3 x 15","notes":"Peso corporal."}],"week":"Semana 5"},{"date":"2026-08-06","title":"Campo: calentamiento Sesión C + Lanzamientos técnicos","type":"field","phase":"Fase 5 · Taper final","blocks":[{"section":"Movilidad articular","name":"Activación de psoas parado","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad torácica","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Movilidad articular","name":"Movilidad de cadera c/cono","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Plancha lateral + remo","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Inchworm","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Zona media","name":"Busszaw","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Curl nórdico invertido","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Preventivos","name":"Band pull apart","sr":"1' trabajo","notes":"","rest":"1'"},{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Intensidad moderada, técnica impecable, sin generar fatiga.","sr":"","notes":""}],"week":"Semana 5"},{"date":"2026-08-07","title":"Recuperación activa — FESTIVO (Batalla de Boyacá)","type":"rest","phase":"Fase 5 · Taper final","blocks":[{"section":"Nota","name":"Sin gimnasio de carga. Movilidad general suave.","sr":"","notes":""}],"week":"Semana 5"},{"date":"2026-08-08","title":"Activación ligera","type":"rest","phase":"Fase 5 · Taper final","blocks":[{"section":"Nota","name":"Activación ligera + logística de viaje. Prioridad al descanso.","sr":"","notes":""}],"week":"Semana 5"},{"date":"2026-08-09","title":"Cancha (equipo) — intensidad controlada","type":"field","phase":"Fase 5 · Taper final","blocks":[{"section":"Nota","name":"Última sesión de carga real antes de viajar. No arriesgar.","sr":"","notes":""}],"week":"Semana 5"},{"date":"2026-08-10","title":"Día de viaje","type":"rest","phase":"Viaje y transición","blocks":[{"section":"Nota","name":"Solo movilidad/estiramiento suave si el cuerpo lo permite. Hidratación prioritaria.","sr":"","notes":""}],"week":"Viaje y Competencia"},{"date":"2026-08-11","title":"Activación ligera en destino","type":"rest","phase":"Viaje y transición","blocks":[{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Movilidad general + caminata/trote suave 15-20 min. Sin carga nueva.","sr":"","notes":""}],"week":"Viaje y Competencia"},{"date":"2026-08-12","title":"Activación ligera en destino","type":"rest","phase":"Viaje y transición","blocks":[{"section":"Hombro (activación)","name":"Band Pull Apart","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Hombro (activación)","name":"ER banda derecha","sr":"2 x 15","notes":"Antes de lanzar, banda ligera."},{"section":"Nota","name":"Movilidad general + caminata/trote suave 15-20 min. Sin carga nueva.","sr":"","notes":""}],"week":"Viaje y Competencia"},{"date":"2026-08-13","title":"Activación final","type":"rest","phase":"Viaje y transición","blocks":[{"section":"Nota","name":"Movimientos específicos de lanzamiento suave, sensación de campo, sin fatiga.","sr":"","notes":""}],"week":"Viaje y Competencia"},{"date":"2026-08-14","title":"COMPETENCIA","type":"tournament","phase":"Competencia","blocks":[{"section":"Nota","name":"Inicio de la competencia en Irlanda. Ventaja fisiológica de altitud (Bogotá) a nivel del mar.","sr":"","notes":""}],"week":"Viaje y Competencia"}]
+;
+
+const TYPE_COLOR = {gym:'var(--gym)', cardio:'var(--cardio)', field:'var(--field)', rest:'var(--rest)', tournament:'var(--tournament)'};
+const TYPE_LABEL = {gym:'Gimnasio', cardio:'Cardio', field:'Campo', rest:'Recuperación', tournament:'Competencia'};
+const DOW = ['DOM','LUN','MAR','MIÉ','JUE','VIE','SÁB'];
+const KG_TO_LB = 2.20462;
+
+let currentIndex = 0;
+const weekProgressCache = {};
+
+function kgToLb(kg){ return Math.round(kg*KG_TO_LB*10)/10; }
+
+function findTodayIndex(){
+  const today = new Date();
+  const iso = today.toISOString().slice(0,10);
+  let idx = DATA.findIndex(d => d.date === iso);
+  if(idx === -1){ idx = (iso < DATA[0].date) ? 0 : DATA.length - 1; }
+  return idx;
+}
+
+function getDayState(dateStr){
+  try{ const raw = localStorage.getItem('day:'+dateStr); return raw ? JSON.parse(raw) : {}; }
+  catch(e){ return {}; }
+}
+function setDayState(dateStr, state){
+  try{ localStorage.setItem('day:'+dateStr, JSON.stringify(state)); }catch(e){}
+}
+
+function checkableIndices(day){ return day.blocks.map((b,i)=>i).filter(i => day.blocks[i].section !== 'Nota'); }
+
+function computeProgress(day, state){
+  const idxs = checkableIndices(day);
+  const done = idxs.filter(i => state[i] && state[i].done).length;
+  return {done, total: idxs.length};
+}
+
+function fmtDate(dateStr){
+  const d = new Date(dateStr+'T00:00:00');
+  const dow = DOW[d.getDay()];
+  const dd = String(d.getDate()).padStart(2,'0');
+  const mon = d.toLocaleDateString('es-CO',{month:'short'}).replace('.','');
+  return {dow, dd, mon, full: `${dow} ${dd} ${mon}`};
+}
+
+function youtubeSearchUrl(name){
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(name + ' técnica ejercicio');
+}
+
+function render(){
+  const day = DATA[currentIndex];
+  const state = getDayState(day.date);
+  const {done, total} = computeProgress(day, state);
+
+  document.getElementById('phasePill').textContent = day.phase;
+  const f = fmtDate(day.date);
+  document.getElementById('dateBox').innerHTML = `<b>${f.full}</b>`;
+  document.getElementById('heroType').textContent = TYPE_LABEL[day.type] || day.type;
+  document.getElementById('heroType').style.background = TYPE_COLOR[day.type] || '#999';
+  document.getElementById('heroTitle').textContent = day.title;
+  document.getElementById('heroPhase').textContent = day.phase;
+  document.getElementById('heroBar').style.background = TYPE_COLOR[day.type] || '#999';
+
+  const circumference = 2*Math.PI*31;
+  const pct = total>0 ? done/total : 0;
+  const ring = document.getElementById('ringProgress');
+  ring.setAttribute('stroke-dasharray', circumference.toFixed(1));
+  ring.setAttribute('stroke-dashoffset', (circumference*(1-pct)).toFixed(1));
+  ring.style.stroke = TYPE_COLOR[day.type] || 'var(--accent)';
+  document.getElementById('ringLabel').textContent = total>0 ? `${done}/${total}` : '—';
+
+  document.getElementById('prevBtn').style.visibility = currentIndex===0 ? 'hidden' : 'visible';
+  document.getElementById('nextBtn').style.visibility = currentIndex===DATA.length-1 ? 'hidden' : 'visible';
+
+  renderContent(day, state);
+  renderWeekStrip(day);
+}
+
+function renderContent(day, state){
+  const content = document.getElementById('content');
+  content.innerHTML = '';
+
+  const grouped = [];
+  let lastSection = null;
+  day.blocks.forEach((b, i) => {
+    if(b.section !== lastSection){ grouped.push({section: b.section, items: []}); lastSection = b.section; }
+    grouped[grouped.length-1].items.push({...b, idx: i});
+  });
+
+  grouped.forEach(group => {
+    if(group.section === 'Nota'){
+      group.items.forEach(item => {
+        const box = document.createElement('div');
+        box.className = 'note-box';
+        box.innerHTML = `<b>Nota —</b> ${item.name}`;
+        content.appendChild(box);
+      });
+      return;
+    }
+    const sec = document.createElement('div');
+    sec.className = 'section';
+    const head = document.createElement('div');
+    head.className = 'section-head';
+    head.textContent = group.section;
+    sec.appendChild(head);
+
+    group.items.forEach(item => {
+      const st = state[item.idx] || {};
+      const row = document.createElement('div');
+      row.className = 'exrow' + (st.done ? ' done' : '');
+
+      const chk = document.createElement('div');
+      chk.className = 'chk' + (st.done ? ' on' : '');
+      chk.textContent = st.done ? '✓' : '';
+      chk.onclick = () => {
+        const ns = state[item.idx] || {};
+        ns.done = !ns.done;
+        state[item.idx] = ns;
+        setDayState(day.date, state);
+        render();
+      };
+      row.appendChild(chk);
+
+      const body = document.createElement('div');
+      body.className = 'exbody';
+
+      const head2 = document.createElement('div');
+      head2.className = 'exhead';
+      const name = document.createElement('div');
+      name.className = 'exname' + (st.done ? ' done' : '');
+      name.textContent = item.name;
+      head2.appendChild(name);
+      const vid = document.createElement('a');
+      vid.className = 'vidbtn';
+      vid.href = youtubeSearchUrl(item.name);
+      vid.target = '_blank';
+      vid.rel = 'noopener noreferrer';
+      vid.textContent = '▶ Ver técnica';
+      head2.appendChild(vid);
+      body.appendChild(head2);
+
+      const meta = document.createElement('div');
+      meta.className = 'exmeta';
+      if(item.sr){ const p = document.createElement('span'); p.className='pill'; p.textContent=item.sr; meta.appendChild(p); }
+      if(item.load !== undefined){
+        const p = document.createElement('span'); p.className='pill load';
+        p.textContent = `Sug: ${item.load} kg / ${kgToLb(item.load)} lb (${Math.round(item.pct*100)}%)`;
+        meta.appendChild(p);
+      }
+      if(item.rest){ const p=document.createElement('span'); p.className='pill'; p.textContent=`Desc ${item.rest}`; meta.appendChild(p); }
+      body.appendChild(meta);
+
+      if(item.notes){ const n=document.createElement('div'); n.className='exnotes'; n.textContent=item.notes; body.appendChild(n); }
+
+      if(item.load !== undefined){
+        const wr = document.createElement('div');
+        wr.className = 'weightrow';
+        const lbl = document.createElement('label'); lbl.textContent = 'Real (kg):';
+        const inp = document.createElement('input');
+        inp.type = 'text'; inp.inputMode = 'decimal';
+        inp.placeholder = String(item.load);
+        inp.value = st.weight || '';
+        const lbSpan = document.createElement('span');
+        lbSpan.className = 'lbread';
+        const updateLb = () => {
+          const v = parseFloat(inp.value);
+          lbSpan.textContent = isNaN(v) ? '' : `≈ ${kgToLb(v)} lb`;
+        };
+        updateLb();
+        inp.oninput = updateLb;
+        inp.onchange = () => {
+          const ns = state[item.idx] || {};
+          ns.weight = inp.value;
+          state[item.idx] = ns;
+          setDayState(day.date, state);
+        };
+        wr.appendChild(lbl); wr.appendChild(inp); wr.appendChild(lbSpan);
+        body.appendChild(wr);
+      }
+
+      row.appendChild(body);
+      sec.appendChild(row);
+    });
+    content.appendChild(sec);
+  });
+
+  // Botón Finalizar entrenamiento
+  const {total: totalCk} = computeProgress(day, state);
+  if(totalCk > 0){
+    const finalized = state.__finalized;
+    const btn = document.createElement('button');
+    btn.className = 'finalbtn';
+    btn.textContent = finalized ? 'Entrenamiento enviado ✓ (enviar de nuevo)' : 'Finalizar entrenamiento y guardar';
+    btn.onclick = () => finalizarEntrenamiento(day, state, btn);
+    content.appendChild(btn);
+    const status = document.createElement('div');
+    status.className = 'finalstatus';
+    status.id = 'finalStatus';
+    content.appendChild(status);
+  }
+}
+
+async function finalizarEntrenamiento(day, state, btn){
+  const statusEl = document.getElementById('finalStatus');
+  if(SHEET_API_URL.indexOf('PON_AQUI') === 0 || SHEET_API_URL.includes('PON_AQUI')){
+    statusEl.textContent = 'Falta configurar SHEET_API_URL en el código de la app.';
+    return;
+  }
+  btn.disabled = true;
+  statusEl.textContent = 'Enviando a Google Sheets...';
+  const idxs = checkableIndices(day);
+  const rows = idxs.map(i => {
+    const item = day.blocks[i];
+    const st = state[i] || {};
+    return {
+      Fecha: day.date,
+      Semana: day.week,
+      Fase: day.phase,
+      Sesion: day.title,
+      Seccion: item.section,
+      Ejercicio: item.name,
+      SeriesReps: item.sr || '',
+      SugeridoKg: item.load !== undefined ? item.load : '',
+      SugeridoLb: item.load !== undefined ? kgToLb(item.load) : '',
+      RealKg: st.weight || '',
+      RealLb: st.weight ? kgToLb(parseFloat(st.weight)) : '',
+      Completado: st.done ? 'SI' : 'NO'
+    };
+  });
+  try{
+    await fetch(SHEET_API_URL, { method: 'POST', body: JSON.stringify({rows}) });
+    state.__finalized = true;
+    setDayState(day.date, state);
+    statusEl.textContent = 'Guardado el ' + new Date().toLocaleString('es-CO');
+    btn.disabled = false;
+    btn.textContent = 'Entrenamiento enviado ✓ (enviar de nuevo)';
+  }catch(err){
+    statusEl.textContent = 'Error al enviar. Revisa la URL o tu conexión.';
+    btn.disabled = false;
+  }
+}
+
+function renderWeekStrip(currentDay){
+  const strip = document.getElementById('weekStrip');
+  strip.innerHTML = '';
+  const weekDays = DATA.filter(d => d.week === currentDay.week);
+  weekDays.forEach(d => {
+    let prog = weekProgressCache[d.date];
+    if(!prog){ const st = getDayState(d.date); prog = computeProgress(d, st); weekProgressCache[d.date] = prog; }
+    const f = fmtDate(d.date);
+    const chip = document.createElement('div');
+    chip.className = 'daychip' + (d.date === currentDay.date ? ' active' : '');
+    const pct = prog.total>0 ? Math.round(100*prog.done/prog.total) : 0;
+    chip.innerHTML = `<div class="dow">${f.dow}</div><div class="num">${f.dd}</div><div class="dot" style="background:${TYPE_COLOR[d.type]||'#999'}"></div><div class="bar"><i style="width:${pct}%"></i></div>`;
+    chip.onclick = () => { currentIndex = DATA.findIndex(x => x.date === d.date); render(); };
+    strip.appendChild(chip);
+  });
+}
+
+document.getElementById('prevBtn').onclick = () => { if(currentIndex>0){ currentIndex--; render(); } };
+document.getElementById('nextBtn').onclick = () => { if(currentIndex<DATA.length-1){ currentIndex++; render(); } };
+document.getElementById('todayBtn').onclick = () => { currentIndex = findTodayIndex(); render(); };
+
+/* ============ PESTAÑA PROGRESO ============ */
+let progLoaded = false;
+let sheetRowsCache = null;
+
+document.getElementById('tabPlan').onclick = () => {
+  document.getElementById('tabPlan').classList.add('active');
+  document.getElementById('tabProg').classList.remove('active');
+  document.getElementById('planView').style.display = 'block';
+  document.getElementById('progView').style.display = 'none';
+};
+document.getElementById('tabProg').onclick = () => {
+  document.getElementById('tabProg').classList.add('active');
+  document.getElementById('tabPlan').classList.remove('active');
+  document.getElementById('planView').style.display = 'none';
+  document.getElementById('progView').style.display = 'block';
+  loadProgress();
+};
+
+async function loadProgress(){
+  const noteEl = document.getElementById('progConfigNote');
+  const chartsEl = document.getElementById('progCharts');
+  if(SHEET_API_URL.includes('PON_AQUI')){
+    noteEl.style.display = 'block';
+    chartsEl.style.display = 'none';
+    noteEl.innerHTML = `<div class="confignote">Para ver tu progreso aquí, primero configura tu Google Sheet y pega la URL de tu Apps Script en la constante <code>SHEET_API_URL</code> dentro del código de esta app. Revisa las instrucciones que te compartí junto con este archivo.</div>`;
+    return;
+  }
+  noteEl.innerHTML = '';
+  if(progLoaded && sheetRowsCache){ drawCharts(sheetRowsCache); return; }
+  noteEl.innerHTML = `<div class="confignote">Cargando datos desde Google Sheets...</div>`;
+  try{
+    const res = await fetch(SHEET_API_URL, {method:'GET'});
+    const rows = await res.json();
+    sheetRowsCache = rows;
+    progLoaded = true;
+    noteEl.innerHTML = '';
+    chartsEl.style.display = 'block';
+    drawCharts(rows);
+  }catch(err){
+    noteEl.innerHTML = `<div class="confignote">No se pudo cargar el progreso. Verifica que la URL de Apps Script sea correcta y esté publicada como "Cualquier usuario". (${err})</div>`;
+  }
+}
+
+let chartCumplimientoInstance = null;
+let chartCargaInstance = null;
+
+function drawCharts(rows){
+  // Cumplimiento por fecha
+  const byDate = {};
+  rows.forEach(r => {
+    const f = r.Fecha;
+    if(!byDate[f]) byDate[f] = {done:0, total:0};
+    byDate[f].total++;
+    if(String(r.Completado).toUpperCase() === 'SI') byDate[f].done++;
+  });
+  const dates = Object.keys(byDate).sort();
+  const pcts = dates.map(f => Math.round(100*byDate[f].done/byDate[f].total));
+
+  const ctx1 = document.getElementById('chartCumplimiento').getContext('2d');
+  if(chartCumplimientoInstance) chartCumplimientoInstance.destroy();
+  chartCumplimientoInstance = new Chart(ctx1, {
+    type: 'line',
+    data: { labels: dates, datasets: [{ label:'% cumplimiento', data: pcts, borderColor:'#E8622C', backgroundColor:'rgba(232,98,44,0.15)', fill:true, tension:0.25 }]},
+    options: { responsive:true, scales:{ y:{ min:0, max:100 } }, plugins:{ legend:{ display:false } } }
+  });
+
+  // Progresión de carga por ejercicio
+  const exerciseNames = [...new Set(rows.filter(r => r.SugeridoKg !== '' && r.SugeridoKg !== undefined).map(r => r.Ejercicio))].sort();
+  const sel = document.getElementById('exerciseSelect');
+  sel.innerHTML = exerciseNames.map(n => `<option value="${n}">${n}</option>`).join('');
+  sel.onchange = () => drawCargaChart(rows, sel.value);
+  if(exerciseNames.length) drawCargaChart(rows, exerciseNames[0]);
+}
+
+function drawCargaChart(rows, exerciseName){
+  const filtered = rows.filter(r => r.Ejercicio === exerciseName).sort((a,b) => a.Fecha.localeCompare(b.Fecha));
+  const labels = filtered.map(r => r.Fecha);
+  const sugerido = filtered.map(r => parseFloat(r.SugeridoKg) || null);
+  const real = filtered.map(r => r.RealKg !== '' ? parseFloat(r.RealKg) : null);
+
+  const ctx = document.getElementById('chartCarga').getContext('2d');
+  if(chartCargaInstance) chartCargaInstance.destroy();
+  chartCargaInstance = new Chart(ctx, {
+    type: 'line',
+    data: { labels, datasets: [
+      { label:'Sugerido (kg)', data: sugerido, borderColor:'#8A8F87', borderDash:[4,3], tension:0.2 },
+      { label:'Real (kg)', data: real, borderColor:'#2E5EAA', tension:0.2 }
+    ]},
+    options: { responsive:true, plugins:{ legend:{ display:true, position:'bottom' } } }
+  });
+}
+
+currentIndex = findTodayIndex();
+render();
+</script>
+</body>
+</html>
